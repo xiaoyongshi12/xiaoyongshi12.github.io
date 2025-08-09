@@ -169,6 +169,14 @@
             background: linear-gradient(135deg, #162370 0%, #22c0be 100%);
         }
 
+        .btn.secondary {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+
+        .btn.secondary:hover {
+            background: linear-gradient(135deg, #5a0db9 0%, #1c68e8 100%);
+        }
+
         .search-form {
             display: flex;
             gap: 20px;
@@ -415,6 +423,15 @@
             padding: 30px;
             margin-top: 20px;
             border: 1px solid #e0e0e0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, padding 0.5s ease-out, margin 0.5s ease-out;
+        }
+        
+        .deploy-guide.expanded {
+            max-height: 2000px;
+            padding: 30px;
+            margin-top: 20px;
         }
         
         .deploy-steps {
@@ -607,6 +624,15 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        
+        .toggle-icon {
+            margin-left: 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
@@ -670,44 +696,76 @@
                     <h3><i class="fas fa-server"></i> 部署到服务器指南</h3>
                     <p>由于浏览器安全限制，本地生成的二维码无法在移动设备上直接扫描打开。请将本系统部署到服务器（如GitHub Pages、Vercel等）后使用。</p>
                     
-                    <div class="server-icon">
-                        <i class="fas fa-server"></i>
-                    </div>
+                    <button class="btn secondary" id="toggleDeployGuide">
+                        <i class="fas fa-book"></i> 显示部署指南
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </button>
                     
-                    <div class="deploy-steps">
-                        <div class="step">
-                            <h3>GitHub Pages部署</h3>
-                            <div class="step-content">
-                                <ol>
-                                    <li>登录GitHub账户，创建一个新仓库</li>
-                                    <li>将本HTML文件上传到仓库</li>
-                                    <li>在仓库设置中启用GitHub Pages功能</li>
-                                    <li>通过生成的GitHub Pages链接访问系统</li>
-                                </ol>
-                                <a href="https://pages.github.com/" target="_blank" class="btn" style="margin-top: 10px;">
-                                    <i class="fab fa-github"></i> GitHub Pages指南
-                                </a>
+                    <div class="deploy-guide" id="deployGuide">
+                        <div class="server-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        
+                        <div class="deploy-steps">
+                            <div class="step">
+                                <h3>GitHub Pages部署</h3>
+                                <div class="step-content">
+                                    <ol>
+                                        <li>登录GitHub账户，创建一个新仓库</li>
+                                        <li>将本HTML文件上传到仓库（可命名为index.html）</li>
+                                        <li>在仓库设置中，选择"Settings" → "Pages"</li>
+                                        <li>在"Source"部分选择"Deploy from a branch"</li>
+                                        <li>在"Branch"下拉菜单中，选择"main"分支和"/ (root)"文件夹</li>
+                                        <li>点击"Save"按钮，等待部署完成</li>
+                                        <li>通过生成的GitHub Pages链接访问系统（格式：https://username.github.io/repository-name/）</li>
+                                    </ol>
+                                    <a href="https://pages.github.com/" target="_blank" class="btn" style="margin-top: 10px;">
+                                        <i class="fab fa-github"></i> GitHub Pages指南
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="step">
+                                <h3>解决二维码扫描问题</h3>
+                                <div class="step-content">
+                                    <p>如果在GitHub Pages部署后二维码仍然无法扫描，请尝试以下解决方案：</p>
+                                    <ol>
+                                        <li>确保您的GitHub Pages URL是<strong>https://</strong>开头</li>
+                                        <li>在GitHub仓库设置中，点击"Pages" → "Build and deployment"</li>
+                                        <li>选择"GitHub Actions"作为部署源</li>
+                                        <li>创建一个新的workflow文件，内容如下：</li>
+                                    </ol>
+                                    <div class="code-block">
+                                        <code>name: Deploy to GitHub Pages<br><br>
+on:<br>
+  push:<br>
+    branches: [ main ]<br>
+  workflow_dispatch:<br><br>
+jobs:<br>
+  build-and-deploy:<br>
+    runs-on: ubuntu-latest<br>
+    steps:<br>
+      - name: Checkout<br>
+        uses: actions/checkout@v3<br><br>
+      - name: Setup Pages<br>
+        uses: actions/configure-pages@v3<br><br>
+      - name: Upload artifact<br>
+        uses: actions/upload-pages-artifact@v1<br>
+        with:<br>
+          path: '.'<br><br>
+      - name: Deploy to GitHub Pages<br>
+        uses: actions/deploy-pages@v2</code>
+                                    </div>
+                                    <div class="warning">
+                                        <i class="fas fa-exclamation-triangle"></i> 此方法可以解决某些地区的CDN访问问题
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="step">
-                            <h3>Vercel部署</h3>
-                            <div class="step-content">
-                                <ol>
-                                    <li>访问 <a href="https://vercel.com/" target="_blank">vercel.com</a> 并注册</li>
-                                    <li>导入您的GitHub仓库</li>
-                                    <li>选择项目并点击部署</li>
-                                    <li>通过Vercel提供的域名访问系统</li>
-                                </ol>
-                                <a href="https://vercel.com/docs" target="_blank" class="btn" style="margin-top: 10px;">
-                                    <i class="fas fa-external-link-alt"></i> Vercel文档
-                                </a>
-                            </div>
+                        <div class="warning" style="margin-top: 20px;">
+                            <i class="fas fa-exclamation-circle"></i> 注意：部署后请确保使用HTTPS链接访问系统，移动设备才能正常扫描二维码。
                         </div>
-                    </div>
-                    
-                    <div class="warning" style="margin-top: 20px;">
-                        <i class="fas fa-exclamation-circle"></i> 注意：部署后请确保使用HTTPS链接访问系统，移动设备才能正常扫描二维码。
                     </div>
                 </div>
             </div>
@@ -804,6 +862,22 @@
             
             // 初始化查询结果状态
             document.getElementById('searchResult').style.display = 'block';
+            
+            // 部署指南切换按钮
+            const toggleBtn = document.getElementById('toggleDeployGuide');
+            const deployGuide = document.getElementById('deployGuide');
+            const toggleIcon = toggleBtn.querySelector('.toggle-icon');
+            
+            toggleBtn.addEventListener('click', () => {
+                deployGuide.classList.toggle('expanded');
+                toggleIcon.classList.toggle('rotated');
+                
+                if (deployGuide.classList.contains('expanded')) {
+                    toggleBtn.innerHTML = '<i class="fas fa-book"></i> 隐藏部署指南 <i class="fas fa-chevron-up toggle-icon rotated"></i>';
+                } else {
+                    toggleBtn.innerHTML = '<i class="fas fa-book"></i> 显示部署指南 <i class="fas fa-chevron-down toggle-icon"></i>';
+                }
+            });
         });
 
         // 文件上传处理
