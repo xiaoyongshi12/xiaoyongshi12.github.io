@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>信息匹配系统</title>
-    <!-- 使用多个XLSX库源确保可靠性 -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- 使用可靠的QRCode库 -->
-    <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@gh-pages/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -114,6 +111,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .upload-area:hover {
@@ -169,14 +167,6 @@
             transform: translateY(-3px);
             box-shadow: 0 6px 15px rgba(26, 41, 128, 0.4);
             background: linear-gradient(135deg, #162370 0%, #22c0be 100%);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
         }
 
         .search-form {
@@ -368,11 +358,63 @@
             text-align: center;
         }
         
+        .lib-status {
+            background: #fff3cd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .lib-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .lib-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .qr-canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .cdn-fallback {
+            background: #e6f7ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .cdn-fallback a {
+            color: #1a2980;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        
+        .file-info {
+            background: #e6f7ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .file-info i {
+            margin-right: 8px;
+            color: #1a2980;
+        }
+        
         .deploy-guide {
             background: #f8f9fa;
             border-radius: 10px;
             padding: 30px;
             margin-top: 20px;
+            border: 1px solid #e0e0e0;
         }
         
         .deploy-steps {
@@ -455,14 +497,6 @@
             line-height: 1.5;
         }
         
-        .screenshot {
-            max-width: 100%;
-            border-radius: 8px;
-            margin: 15px 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border: 1px solid #ddd;
-        }
-        
         .note {
             background: #e6f7ff;
             border-left: 4px solid #1a2980;
@@ -478,6 +512,34 @@
             border-radius: 4px;
             margin: 15px 0;
         }
+        
+        .qr-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .qr-actions .btn {
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+        
+        .deploy-notice {
+            background: #fff8e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #ffd54f;
+        }
+        
+        .deploy-notice h3 {
+            color: #e65100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
 
         @media (max-width: 768px) {
             .container {
@@ -489,8 +551,28 @@
                 padding: 30px 20px;
             }
             
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
             .content {
                 padding: 20px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 30px 15px;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .result-grid {
+                grid-template-columns: 1fr;
             }
             
             .step {
@@ -500,18 +582,6 @@
             .step::before {
                 left: 15px;
                 top: 20px;
-            }
-            
-            .upload-area {
-                padding: 30px 20px;
-            }
-            
-            .search-form {
-                flex-direction: column;
-            }
-            
-            .result-grid {
-                grid-template-columns: 1fr;
             }
         }
 
@@ -524,23 +594,18 @@
             background: #f8f9fa;
         }
         
-        .lib-status {
-            background: #fff3cd;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
+        .server-icon {
+            font-size: 5em;
+            color: #1a2980;
             text-align: center;
-            font-weight: bold;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
         }
         
-        .lib-status.success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .lib-status.error {
-            background: #f8d7da;
-            color: #721c24;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -548,12 +613,20 @@
     <div class="container">
         <div class="header">
             <h1>信息匹配系统</h1>
-            <p>安全高效的数据查询解决方案 | XLSX库加载问题已解决</p>
+            <p>安全高效的数据查询解决方案 | 优化版二维码扫描</p>
         </div>
 
         <div class="content">
             <div id="libStatus" class="lib-status">
                 <div class="loading"></div> 正在检查依赖库状态...
+            </div>
+            
+            <div class="cdn-fallback">
+                <i class="fas fa-info-circle"></i> 提示：如果库加载失败，请尝试访问以下链接手动加载：
+                <div style="margin-top: 10px;">
+                    <a href="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" target="_blank">XLSX库</a> | 
+                    <a href="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@gh-pages/qrcode.min.js" target="_blank">QRCode库</a>
+                </div>
             </div>
             
             <div class="section">
@@ -564,8 +637,13 @@
                     <div class="subtitle">支持 .xlsx, .xls 格式</div>
                     <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
                 </div>
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <i class="fas fa-file-alt"></i> <span id="fileName">未选择文件</span> | 
+                    <span id="fileSize">0 KB</span> | 
+                    <span id="recordCount">0 条记录</span>
+                </div>
                 <div id="status"></div>
-                <div class="note">
+                <div class="info-note">
                     <i class="fas fa-info-circle"></i> 提示：系统仅读取文件内容用于本地查询，不会上传到任何服务器。
                 </div>
             </div>
@@ -575,11 +653,61 @@
                 <button class="btn" id="generateQR">
                     <i class="fas fa-qrcode"></i> 生成二维码
                 </button>
+                <div id="localFileWarning" class="qr-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i> 提示：本地生成的二维码无法在移动设备上扫描，请部署到服务器使用
+                </div>
                 <div id="qrContainer" class="qr-container" style="display: none;">
                     <div id="qrcode"></div>
                     <h3>扫描二维码查询信息</h3>
-                    <div id="qrWarning" class="qr-warning" style="display: none;">
-                        <i class="fas fa-exclamation-triangle"></i> 提示：本地生成的二维码可能无法在移动设备上扫描，请部署到服务器使用
+                    <div class="qr-actions">
+                        <button class="btn" id="downloadQR">
+                            <i class="fas fa-download"></i> 下载二维码
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="deploy-notice">
+                    <h3><i class="fas fa-server"></i> 部署到服务器指南</h3>
+                    <p>由于浏览器安全限制，本地生成的二维码无法在移动设备上直接扫描打开。请将本系统部署到服务器（如GitHub Pages、Vercel等）后使用。</p>
+                    
+                    <div class="server-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    
+                    <div class="deploy-steps">
+                        <div class="step">
+                            <h3>GitHub Pages部署</h3>
+                            <div class="step-content">
+                                <ol>
+                                    <li>登录GitHub账户，创建一个新仓库</li>
+                                    <li>将本HTML文件上传到仓库</li>
+                                    <li>在仓库设置中启用GitHub Pages功能</li>
+                                    <li>通过生成的GitHub Pages链接访问系统</li>
+                                </ol>
+                                <a href="https://pages.github.com/" target="_blank" class="btn" style="margin-top: 10px;">
+                                    <i class="fab fa-github"></i> GitHub Pages指南
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="step">
+                            <h3>Vercel部署</h3>
+                            <div class="step-content">
+                                <ol>
+                                    <li>访问 <a href="https://vercel.com/" target="_blank">vercel.com</a> 并注册</li>
+                                    <li>导入您的GitHub仓库</li>
+                                    <li>选择项目并点击部署</li>
+                                    <li>通过Vercel提供的域名访问系统</li>
+                                </ol>
+                                <a href="https://vercel.com/docs" target="_blank" class="btn" style="margin-top: 10px;">
+                                    <i class="fas fa-external-link-alt"></i> Vercel文档
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="warning" style="margin-top: 20px;">
+                        <i class="fas fa-exclamation-circle"></i> 注意：部署后请确保使用HTTPS链接访问系统，移动设备才能正常扫描二维码。
                     </div>
                 </div>
             </div>
@@ -604,73 +732,10 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="section deploy-guide">
-                <h2><i class="fab fa-github"></i> GitHub Pages部署指南</h2>
-                
-                <div class="deploy-steps">
-                    <div class="step">
-                        <h3>1. 创建新仓库</h3>
-                        <div class="step-content">
-                            <p>登录GitHub账户，点击右上角的"+"图标，选择"New repository"。</p>
-                            <p>在创建仓库时，选择以下设置：</p>
-                            <ul>
-                                <li>仓库名称：输入一个有意义的名称（如info-system）</li>
-                                <li>选择"Public"（公开）</li>
-                                <li>勾选"Add a README file"</li>
-                                <li>点击"Create repository"按钮</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="step">
-                        <h3>2. 上传HTML文件</h3>
-                        <div class="step-content">
-                            <p>在您新创建的仓库页面：</p>
-                            <ol>
-                                <li>点击"Add file"按钮，选择"Upload files"</li>
-                                <li>将您的HTML文件（可命名为index.html）拖拽到上传区域</li>
-                                <li>添加一个简短的提交信息，例如"Add info system"</li>
-                                <li>点击"Commit changes"按钮</li>
-                            </ol>
-                        </div>
-                    </div>
-                    
-                    <div class="step">
-                        <h3>3. 配置GitHub Pages</h3>
-                        <div class="step-content">
-                            <p>在仓库页面：</p>
-                            <ol>
-                                <li>点击顶部的"Settings"选项卡</li>
-                                <li>在左侧菜单中找到"Pages"选项</li>
-                                <li>在"Source"部分，选择"Deploy from a branch"</li>
-                                <li>在"Branch"下拉菜单中，选择"main"分支和"/ (root)"文件夹</li>
-                                <li>点击"Save"按钮</li>
-                            </ol>
-                        </div>
-                    </div>
-                    
-                    <div class="step">
-                        <h3>4. 访问您的网站</h3>
-                        <div class="step-content">
-                            <p>配置完成后：</p>
-                            <ul>
-                                <li>返回"Settings" → "Pages"页面</li>
-                                <li>等待看到"Your site is published at..."消息</li>
-                                <li>点击提供的链接访问您的网站</li>
-                            </ul>
-                            <p>您的网站URL将类似于：</p>
-                            <div class="code-block">
-                                <code>https://&lt;your-username&gt;.github.io/&lt;repository-name&gt;/</code>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <div class="footer">
-            <p>© 2023 信息匹配系统 | 所有数据均在本地处理，安全可靠 | 已解决XLSX库加载问题</p>
+            <p>© 2023 信息匹配系统 | 所有数据均在本地处理，安全可靠 | 部署到服务器解决二维码扫描问题</p>
         </div>
     </div>
 
@@ -679,6 +744,8 @@
         const libStatus = document.getElementById('libStatus');
         let xlsxLoaded = false;
         let qrcodeLoaded = false;
+        let headers = [];
+        let excelData = [];
         
         // 检查库加载状态
         function checkLibraries() {
@@ -700,6 +767,11 @@
             
             // 更新状态显示
             updateLibStatus();
+            
+            // 检查是否为本地文件
+            if (window.location.protocol === 'file:') {
+                document.getElementById('localFileWarning').style.display = 'block';
+            }
         }
         
         // 更新库状态显示
@@ -728,7 +800,7 @@
         // 页面加载完成后检查库状态
         window.addEventListener('load', function() {
             // 延迟检查以等待库加载
-            setTimeout(checkLibraries, 1000);
+            setTimeout(checkLibraries, 1500);
             
             // 初始化查询结果状态
             document.getElementById('searchResult').style.display = 'block';
@@ -738,6 +810,10 @@
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const status = document.getElementById('status');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const recordCount = document.getElementById('recordCount');
 
         uploadArea.addEventListener('click', () => fileInput.click());
         
@@ -783,6 +859,11 @@
             }
 
             showStatus('<div class="loading"></div> 正在读取文件，请稍候...', 'warning');
+            
+            // 更新文件信息
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
 
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -800,12 +881,16 @@
                     // 验证数据
                     if (dataArray.length < 2) {
                         showStatus('Excel文件数据不足，至少需要包含标题行和一行数据', 'error');
+                        recordCount.textContent = '0 条记录';
                         return;
                     }
 
                     // 存储标题和数据
                     headers = dataArray[0];
                     excelData = dataArray.slice(1);
+                    
+                    // 更新记录数量
+                    recordCount.textContent = `${excelData.length} 条记录`;
                     
                     // 显示成功消息
                     showStatus(`成功导入 ${excelData.length} 条数据`, 'success');
@@ -822,14 +907,23 @@
                 } catch (error) {
                     console.error('文件处理错误:', error);
                     showStatus(`文件处理失败: ${error.message}`, 'error');
+                    recordCount.textContent = '0 条记录';
                 }
             };
             
             reader.onerror = function() {
                 showStatus('文件读取失败，请检查文件是否损坏', 'error');
+                recordCount.textContent = '0 条记录';
             };
             
             reader.readAsArrayBuffer(file);
+        }
+        
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            else return (bytes / 1048576).toFixed(1) + ' MB';
         }
 
         function showStatus(message, type) {
@@ -856,35 +950,31 @@
                 showStatus('QRCode库未加载，请刷新页面重试', 'error');
                 return;
             }
-
-            // 获取当前页面URL
-            let currentURL = window.location.href;
             
-            // 解决nullsrcdoc问题
-            if (currentURL.startsWith('about:') || currentURL.startsWith('srcdoc:') || currentURL.includes('null')) {
-                currentURL = window.location.origin + window.location.pathname;
-                document.getElementById('qrWarning').style.display = 'block';
+            // 解决本地文件URL问题
+            let currentURL;
+            if (window.location.protocol === 'file:') {
+                // 本地文件使用绝对路径
+                currentURL = window.location.href;
+                document.getElementById('localFileWarning').style.display = 'block';
             } else {
-                document.getElementById('qrWarning').style.display = 'none';
+                // 在线环境使用当前URL
+                currentURL = window.location.href;
+                document.getElementById('localFileWarning').style.display = 'none';
             }
             
+            // 清除之前的二维码
             qrContainer.innerHTML = '';
             showStatus('<div class="loading"></div> 正在生成二维码...', 'warning');
 
             try {
-                // 清除之前的二维码
-                if (qrCodeInstance) {
-                    qrCodeInstance.clear();
-                    qrCodeInstance = null;
-                }
-                
-                // 创建容器
+                // 创建二维码容器
                 const qrElement = document.createElement('div');
                 qrElement.id = 'qrcode';
                 qrContainer.appendChild(qrElement);
                 
                 // 生成二维码
-                qrCodeInstance = new QRCode(qrElement, {
+                const qr = new QRCode(qrElement, {
                     text: currentURL,
                     width: 200,
                     height: 200,
@@ -898,8 +988,31 @@
                 title.textContent = '扫描二维码查询信息';
                 qrContainer.appendChild(title);
                 
+                // 添加操作按钮容器
+                const actions = document.createElement('div');
+                actions.className = 'qr-actions';
+                actions.innerHTML = `
+                    <button class="btn" id="downloadQR">
+                        <i class="fas fa-download"></i> 下载二维码
+                    </button>
+                `;
+                qrContainer.appendChild(actions);
+                
+                // 添加下载功能
+                document.getElementById('downloadQR').addEventListener('click', () => {
+                    const canvas = qrElement.querySelector('canvas');
+                    if (canvas) {
+                        const link = document.createElement('a');
+                        link.download = '信息查询二维码.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    } else {
+                        showStatus('无法下载二维码，请重试', 'error');
+                    }
+                });
+                
                 qrContainer.style.display = 'block';
-                showStatus('二维码已生成，可扫描访问查询页面', 'success');
+                showStatus('二维码已生成', 'success');
                 
             } catch (error) {
                 console.error('QRCode生成异常:', error);
@@ -938,7 +1051,7 @@
             const nameIndex = headers.findIndex(h => 
                 h && (h.includes('姓名') || h.includes('name')));
             const idIndex = headers.findIndex(h => 
-                h && (h.includes('身份证') || h.includes('id')));
+                h && (h.includes('身份证') || h.includes('id') || h.includes('ID')));
             
             // 遍历所有数据行
             for (let i = 0; i < excelData.length; i++) {
@@ -967,7 +1080,7 @@
                     const result = {};
                     headers.forEach((header, index) => {
                         // 跳过身份证字段
-                        if (header && index !== idIndex && row[index]) {
+                        if (header && index !== idIndex && row[index] !== undefined) {
                             result[header] = row[index];
                         }
                     });
@@ -1001,10 +1114,12 @@
                 `;
                 
                 Object.entries(result).forEach(([key, value]) => {
+                    // 处理空值
+                    const displayValue = value === null || value === undefined ? '无' : value;
                     resultHTML += `
                         <div class="result-row">
                             <span class="result-label">${key}:</span>
-                            <span class="result-value">${value}</span>
+                            <span class="result-value">${displayValue}</span>
                         </div>
                     `;
                 });
