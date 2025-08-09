@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信息匹配系统</title>
+    <!-- 使用可靠的XLSX库 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- 使用更可靠的QRCode库 -->
+    <script src="https://cdn.jsdelivr.net/npm/davidshimjs-qrcodejs@0.0.2/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.2) 0%, transparent 30%);
+            pointer-events: none;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border-radius: 12px;
+            background: #f8f9fa;
+            border-left: 5px solid #1a2980;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section h2 {
+            color: #1a2980;
+            margin-bottom: 25px;
+            font-size: 1.6em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2 i {
+            font-size: 1.3em;
+        }
+
+        .upload-area {
+            border: 2px dashed #1a2980;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f0f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #26d0ce;
+            background: #e6f7ff;
+        }
+
+        .upload-area .icon {
+            font-size: 3em;
+            color: #1a2980;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .upload-area:hover .icon {
+            transform: scale(1.1);
+        }
+
+        .upload-area .title {
+            font-size: 1.3em;
+            color: #1a2980;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .upload-area .subtitle {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(26, 41, 128, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(26, 41, 128, 0.4);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1a2980;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #26d0ce;
+            box-shadow: 0 0 0 3px rgba(38, 208, 206, 0.2);
+        }
+
+        .result-section {
+            margin-top: 20px;
+            padding: 0;
+            background: white;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .qr-container {
+            display: inline-block;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin: 25px 0;
+            border: 1px solid #eaeaea;
+            text-align: center;
+        }
+
+        .qr-container h3 {
+            margin-top: 15px;
+            color: #1a2980;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a2980;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid #eaeaea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .result-card h3 {
+            color: #1a2980;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: #555;
+            flex: 1;
+        }
+
+        .result-value {
+            color: #1a2980;
+            font-weight: bold;
+            flex: 1.5;
+            text-align: right;
+            word-break: break-word;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #ddd;
+        }
+
+        .no-results h3 {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .form-group {
+                min-width: auto;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+            
+            .section {
+                padding: 25px 20px;
+            }
+            
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-note {
+            background: #e6f7ff;
+            border-left: 4px solid #1a2980;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+        
+        .qr-warning {
+            background: #fff3cd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #856404;
+            text-align: center;
+        }
+        
+        .deploy-guide {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 30px;
+            border: 1px solid #eaeaea;
+        }
+        
+        .deploy-guide h3 {
+            color: #1a2980;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .deploy-steps {
+            display: grid;
+            gap: 20px;
+            counter-reset: step-counter;
+        }
+        
+        .step {
+            position: relative;
+            padding-left: 50px;
+        }
+        
+        .step::before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 36px;
+            height: 36px;
+            background: #1a2980;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .step h4 {
+            color: #1a2980;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>信息匹配系统</h1>
+            <p>安全高效的数据查询解决方案</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2><i>📊</i> 上传Excel数据</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="icon">📁</div>
+                    <div class="title">点击或拖拽Excel文件到此处</div>
+                    <div class="subtitle">支持 .xlsx, .xls 格式</div>
+                    <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
+                </div>
+                <div id="status"></div>
+                <div class="info-note">
+                    提示：系统仅读取文件内容用于本地查询，不会上传到任何服务器。
+                </div>
+            </div>
+
+            <div class="section">
+                <h2><i>📱</i> 生成查询二维码</h2>
+                <button class="btn" id="generateQR">生成二维码</button>
+                <div id="qrContainer" class="qr-container" style="display: none;">
+                    <div id="qrcode"></div>
+                    <h3>扫描二维码查询信息</h3>
+                    <div id="qrWarning" class="qr-warning" style="display: none;">
+                        提示：本地生成的二维码可能无法在移动设备上扫描，请部署到服务器使用
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2><i>🔍</i> 信息查询</h2>
+                <div class="search-form">
+                    <div class="form-group">
+                        <label for="searchInput">姓名或身份证后6位</label>
+                        <input type="text" id="searchInput" placeholder="请输入姓名或身份证后6位">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn" id="searchBtn">查询信息</button>
+                    </div>
+                </div>
+                <div id="searchResult" class="result-section">
+                    <div class="no-results">
+                        <h3>暂无查询结果</h3>
+                        <p>请在上方输入查询条件并点击查询按钮</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section deploy-guide">
+                <h2><i>🚀</i> 部署指南</h2>
+                <div class="deploy-steps">
+                    <div class="step">
+                        <h4>1. 保存HTML文件</h4>
+                        <p>将本页保存为HTML文件（例如：info-system.html）</p>
+                    </div>
+                    <div class="step">
+                        <h4>2. 选择部署方式</h4>
+                        <p>选择一种部署方式：</p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><strong>GitHub Pages</strong>：免费静态网站托管服务</li>
+                            <li><strong>Netlify/Vercel</strong>：专业的静态网站托管平台</li>
+                            <li><strong>自有服务器</strong>：使用Nginx/Apache部署</li>
+                        </ul>
+                    </div>
+                    <div class="step">
+                        <h4>3. GitHub Pages部署步骤</h4>
+                        <p>
+                            a. 创建GitHub账户（如果没有）<br>
+                            b. 创建新仓库<br>
+                            c. 上传HTML文件到仓库<br>
+                            d. 进入仓库设置 → Pages → 选择main分支 → 保存
+                        </p>
+                    </div>
+                    <div class="step">
+                        <h4>4. 访问部署的网站</h4>
+                        <p>部署完成后，访问类似 <code>https://username.github.io/repository/</code> 的URL</p>
+                    </div>
+                    <div class="step">
+                        <h4>5. 使用二维码功能</h4>
+                        <p>在部署后的网站上生成二维码，即可通过移动设备扫描访问</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2023 信息匹配系统 | 所有数据均在本地处理，安全可靠</p>
+        </div>
+    </div>
+
+    <script>
+        let excelData = [];
+        let headers = [];
+        let qrCodeInstance = null;
+
+        // 检查库是否加载成功
+        function checkLibraries() {
+            if (typeof XLSX === 'undefined') {
+                showStatus('XLSX库加载失败，请刷新页面重试', 'error');
+                return false;
+            }
+            if (typeof QRCode === 'undefined') {
+                showStatus('QRCode库加载失败，请刷新页面重试', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', function() {
+            // 检查库加载状态
+            if (checkLibraries()) {
+                showStatus('系统已准备就绪，请上传Excel文件开始使用', 'success');
+            } else {
+                showStatus('部分依赖库加载失败，请刷新页面或检查网络', 'error');
+            }
+            
+            // 初始化查询结果状态
+            document.getElementById('searchResult').style.display = 'block';
+        });
+
+        // 文件上传处理
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        // 拖拽功能
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#26d0ce';
+            uploadArea.style.background = '#e6f7ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#1a2980';
+            uploadArea.style.background = '#f0f9ff';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#1a2980';
+            uploadArea.style.background = '#f0f9ff';
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            // 验证文件类型
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showStatus('请选择Excel文件(.xlsx或.xls格式)', 'error');
+                return;
+            }
+
+            // 检查库是否可用
+            if (!checkLibraries()) {
+                return;
+            }
+
+            showStatus('<div class="loading"></div> 正在读取文件，请稍候...', 'warning');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 获取第一个工作表
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // 转换为JSON数组
+                    const dataArray = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // 验证数据
+                    if (dataArray.length < 2) {
+                        showStatus('Excel文件数据不足，至少需要包含标题行和一行数据', 'error');
+                        return;
+                    }
+
+                    // 存储标题和数据
+                    headers = dataArray[0];
+                    excelData = dataArray.slice(1);
+                    
+                    // 显示成功消息
+                    showStatus(`成功导入 ${excelData.length} 条数据`, 'success');
+                    
+                    // 更新查询区域状态
+                    document.getElementById('searchResult').innerHTML = `
+                        <div class="no-results">
+                            <h3>数据已就绪</h3>
+                            <p>请输入查询条件获取信息</p>
+                        </div>
+                    `;
+                    document.getElementById('searchResult').style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('文件处理错误:', error);
+                    showStatus(`文件处理失败: ${error.message}`, 'error');
+                }
+            };
+            
+            reader.onerror = function() {
+                showStatus('文件读取失败，请检查文件是否损坏', 'error');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showStatus(message, type) {
+            status.innerHTML = `<div class="status ${type}">${message}</div>`;
+            // 5秒后自动清除状态消息
+            if (type !== 'warning') {
+                setTimeout(() => {
+                    status.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // 二维码生成
+        const generateQRBtn = document.getElementById('generateQR');
+        const qrContainer = document.getElementById('qrContainer');
+
+        generateQRBtn.addEventListener('click', () => {
+            if (excelData.length === 0) {
+                showStatus('请先上传Excel数据', 'error');
+                return;
+            }
+
+            // 获取当前页面URL
+            let currentURL = window.location.href;
+            
+            // 解决nullsrcdoc问题
+            if (currentURL.startsWith('about:') || currentURL.startsWith('srcdoc:') || currentURL.includes('null')) {
+                currentURL = window.location.origin + window.location.pathname;
+                document.getElementById('qrWarning').style.display = 'block';
+            } else {
+                document.getElementById('qrWarning').style.display = 'none';
+            }
+            
+            qrContainer.innerHTML = '';
+            showStatus('<div class="loading"></div> 正在生成二维码...', 'warning');
+
+            try {
+                // 清除之前的二维码
+                if (qrCodeInstance) {
+                    qrCodeInstance.clear();
+                    qrCodeInstance = null;
+                }
+                
+                // 创建容器
+                const qrElement = document.createElement('div');
+                qrElement.id = 'qrcode';
+                qrContainer.appendChild(qrElement);
+                
+                // 生成二维码
+                qrCodeInstance = new QRCode(qrElement, {
+                    text: currentURL,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#1a2980",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                
+                // 添加标题
+                const title = document.createElement('h3');
+                title.textContent = '扫描二维码查询信息';
+                qrContainer.appendChild(title);
+                
+                qrContainer.style.display = 'block';
+                showStatus('二维码已生成，可扫描访问查询页面', 'success');
+                
+            } catch (error) {
+                console.error('QRCode生成异常:', error);
+                showStatus('二维码生成失败: ' + error.message, 'error');
+                qrContainer.style.display = 'none';
+            }
+        });
+
+        // 信息查询
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResult = document.getElementById('searchResult');
+        const searchInput = document.getElementById('searchInput');
+
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        function performSearch() {
+            const searchValue = searchInput.value.trim();
+
+            if (!searchValue) {
+                showStatus('请输入姓名或身份证后6位进行查询', 'error');
+                return;
+            }
+
+            if (excelData.length === 0) {
+                showStatus('请先上传Excel数据', 'error');
+                return;
+            }
+
+            // 查找匹配的数据
+            const results = [];
+            
+            // 获取姓名和身份证字段索引
+            const nameIndex = headers.findIndex(h => 
+                h && (h.includes('姓名') || h.includes('name')));
+            const idIndex = headers.findIndex(h => 
+                h && (h.includes('身份证') || h.includes('id')));
+            
+            // 遍历所有数据行
+            for (let i = 0; i < excelData.length; i++) {
+                const row = excelData[i];
+                let match = false;
+                
+                // 姓名匹配
+                if (nameIndex !== -1 && row[nameIndex]) {
+                    const nameValue = row[nameIndex].toString().toLowerCase();
+                    if (nameValue.includes(searchValue.toLowerCase())) {
+                        match = true;
+                    }
+                }
+                
+                // 身份证后6位匹配
+                if (!match && idIndex !== -1 && row[idIndex]) {
+                    const idValue = row[idIndex].toString().trim();
+                    // 获取身份证后6位
+                    const idLast6 = idValue.slice(-6);
+                    if (idLast6 === searchValue) {
+                        match = true;
+                    }
+                }
+                
+                if (match) {
+                    const result = {};
+                    headers.forEach((header, index) => {
+                        // 跳过身份证字段
+                        if (header && index !== idIndex && row[index]) {
+                            result[header] = row[index];
+                        }
+                    });
+                    results.push(result);
+                }
+            }
+
+            displaySearchResults(results);
+        }
+
+        function displaySearchResults(results) {
+            const resultContainer = document.getElementById('searchResult');
+            resultContainer.style.display = 'block';
+            
+            if (results.length === 0) {
+                resultContainer.innerHTML = `
+                    <div class="no-results">
+                        <h3>未找到匹配的信息</h3>
+                        <p>请检查输入的查询条件是否正确</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let resultHTML = '<div class="result-grid">';
+            
+            results.forEach((result, index) => {
+                resultHTML += `
+                    <div class="result-card">
+                        <h3>查询结果 ${index + 1}</h3>
+                `;
+                
+                Object.entries(result).forEach(([key, value]) => {
+                    resultHTML += `
+                        <div class="result-row">
+                            <span class="result-label">${key}:</span>
+                            <span class="result-value">${value}</span>
+                        </div>
+                    `;
+                });
+                
+                resultHTML += `</div>`;
+            });
+            
+            resultHTML += '</div>';
+            resultContainer.innerHTML = resultHTML;
+        }
+    </script>
+</body>
+</html>
